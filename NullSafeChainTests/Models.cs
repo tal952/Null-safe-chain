@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Drawing;
 
 namespace NullSafeChainTests
 {
@@ -12,7 +9,9 @@ namespace NullSafeChainTests
 
     public class Person
     {
+        public string Name { get; set; }
         public Address Address { get; set; }
+        public Pet Pet { get; set; }
     }
 
     public class Address
@@ -21,6 +20,25 @@ namespace NullSafeChainTests
     }
 
     public class City
+    {
+    }
+
+    public abstract class Pet
+    {
+        public string Name { get; set; }
+    }
+
+    public class Dog : Pet
+    {
+        public Collar Collar { get; set; }
+    }
+
+    public class Collar
+    {
+        public Color Color { get; set; }
+    }
+
+    public class Cat : Pet
     {
         
     }
