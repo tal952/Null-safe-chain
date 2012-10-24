@@ -1,15 +1,33 @@
-﻿using System.Drawing;
+﻿using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace NullSafeChainTests
 {
     public class Employee
     {
+        public string Name { get; set; }
         public Person Person { get; set; }
+        public List<Employee> Manages { get; set; }
+
+        public Employee()
+        {
+            Manages = new List<Employee>();
+        }
+
+        public Employee GetFirstEmployee()
+        {
+            return Manages.FirstOrDefault();
+        }
+
+        public Employee GetEmployeeByName(string name)
+        {
+            return Manages.FirstOrDefault(x => x.Name == name);
+        }
     }
 
     public class Person
     {
-        public string Name { get; set; }
         public Address Address { get; set; }
         public Pet Pet { get; set; }
     }

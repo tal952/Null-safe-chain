@@ -33,7 +33,7 @@ namespace NullSafeChain
 
         public virtual object ExploreChain(object target)
         {
-            object result = null;
+            object currentResult = null;
 
             foreach (var expression in _disassembleExpression)
             {
@@ -41,44 +41,44 @@ namespace NullSafeChain
                 {
                     case ExpressionType.MemberAccess:
                         {
-                            result = GetMemberAccessValue((MemberExpression) expression, result);
-                            if (result == null) return null;
+                            currentResult = GetMemberAccessValue((MemberExpression) expression, currentResult);
+                            if (currentResult == null) return null;
 
                             break;
                         }
                     case ExpressionType.Call:
                         {
-                            result = GetMethodCallValue((MethodCallExpression) expression, result);
-                            if (result == null) return null;
+                            currentResult = GetMethodCallValue((MethodCallExpression)expression, target, currentResult);
+                            if (currentResult == null) return null;
 
                             break;
                         }
                     case ExpressionType.Parameter:
                         {
-                            result = target;
+                            currentResult = target;
                             break;
                         }
                     case ExpressionType.Constant:
                         {
-                            result = ((ConstantExpression) expression).Value;
+                            currentResult = ((ConstantExpression) expression).Value;
                             break;
                         }
                     case ExpressionType.Convert:
                         {
-                            OnExplicitCast((UnaryExpression) expression, result);
+                            OnExplicitCast((UnaryExpression) expression, currentResult);
 
                             break;
                         }
                     case ExpressionType.TypeAs:
                         {
-                            result = GetTypeAsValue((UnaryExpression) expression, result);
-                            if (result == null) return null;
+                            currentResult = GetTypeAsValue((UnaryExpression) expression, currentResult);
+                            if (currentResult == null) return null;
 
                             break;
                         }
                     case ExpressionType.Lambda:
                         {
-                            result = expression;
+                            currentResult = expression;
                             break;
                         }
                     default:
@@ -87,22 +87,22 @@ namespace NullSafeChain
                 }
             }
 
-            return result;
+            return currentResult;
         }
 
         #endregion
         
         #region Protected Methods
 
-        protected virtual object GetMemberAccessValue(MemberExpression memberExpression, object target)
+        protected virtual object GetMemberAccessValue(MemberExpression memberExpression, object currentResult)
         {
             if (memberExpression.Member is PropertyInfo)
-                return ((PropertyInfo) memberExpression.Member).GetValue(target, null);
+                return ((PropertyInfo) memberExpression.Member).GetValue(currentResult, null);
             else
-                return ((FieldInfo) memberExpression.Member).GetValue(target);
+                return ((FieldInfo) memberExpression.Member).GetValue(currentResult);
         }
 
-        protected virtual object GetMethodCallValue(MethodCallExpression methodCallExpression, object target)
+        protected virtual object GetMethodCallValue(MethodCallExpression methodCallExpression, object target, object currentResult)
         {
             var arguments =
                 methodCallExpression.Arguments.Select(a => new NullSafeChain(a).ExploreChain(target)).ToArray();
@@ -127,28 +127,28 @@ namespace NullSafeChain
             }
             else
             {
-                return methodCallExpression.Method.Invoke(target, arguments);
+                return methodCallExpression.Method.Invoke(currentResult, arguments);
             }
         }
 
-        protected virtual void OnExplicitCast(UnaryExpression unaryExpression, object target)
+        protected virtual void OnExplicitCast(UnaryExpression unaryExpression, object currentResult)
         {
-            if (!unaryExpression.Type.IsInstanceOfType(target))
+            if (!unaryExpression.Type.IsInstanceOfType(currentResult))
             {
                 throw new InvalidCastException(
                     string.Format("Unable to cast object of type '{0}' to type '{1}'.",
-                                  target.GetType(), unaryExpression.Type));
+                                  currentResult.GetType(), unaryExpression.Type));
             }
         }
 
-        protected virtual object GetTypeAsValue(UnaryExpression unaryExpression, object target)
+        protected virtual object GetTypeAsValue(UnaryExpression unaryExpression, object currentResult)
         {
-            if (target == null || !unaryExpression.Type.IsInstanceOfType(target))
+            if (currentResult == null || !unaryExpression.Type.IsInstanceOfType(currentResult))
             {
                 return null;
             }
 
-            return target;
+            return currentResult;
         }
 
         protected virtual IEnumerable<Expression> DisassembleExpression(Expression expression)
